@@ -2,7 +2,6 @@ package serial
 
 import (
 	"testing"
-	"time"
 
 	"github.com/eliothedeman/randutil"
 )
@@ -11,13 +10,10 @@ func TestMarshalUnmarshalPointer(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		p := NewPointer(randutil.Uint64(), randutil.Uint64())
 
-		buff, err := p.MarshalDB()
-		if err != nil {
-			t.Error(err)
-		}
+		buff := p.MarshalDB()
 
 		n := NewPointer(0, 0)
-		err = n.UnmarshalDB(buff)
+		err := n.UnmarshalDB(buff)
 		if err != nil {
 			t.Error(err)
 		}
@@ -31,16 +27,13 @@ func TestMarshalUnmarshalPointer(t *testing.T) {
 func TestMarshalUnmarshalTimedPointer(t *testing.T) {
 
 	for i := 0; i < 1000; i++ {
-		p := NewTimedPointer(randutil.Uint64(), randutil.Uint64(), time.Now())
+		p := NewTimedPointer(randutil.Uint64(), randutil.Uint64(), randutil.Uint64())
 
-		buff, err := p.MarshalDB()
-		if err != nil {
-			t.Fatal(err)
-		}
+		buff := p.MarshalDB()
 
-		np := NewTimedPointer(0, 0, time.Time{})
+		np := NewTimedPointer(0, 0, 0)
 
-		err = np.UnmarshalDB(buff)
+		err := np.UnmarshalDB(buff)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -52,7 +45,7 @@ func TestMarshalUnmarshalTimedPointer(t *testing.T) {
 }
 
 func BenchmarkMarshalTimedPointer(b *testing.B) {
-	p := NewTimedPointer(0, 0, time.Now())
+	p := NewTimedPointer(0, 0, randutil.Uint64())
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -63,8 +56,8 @@ func BenchmarkMarshalTimedPointer(b *testing.B) {
 }
 
 func BenchmarkUnmarshalTimedPointer(b *testing.B) {
-	p := NewTimedPointer(0, 0, time.Now())
-	buff, _ := p.MarshalDB()
+	p := NewTimedPointer(0, 0, randutil.Uint64())
+	buff := p.MarshalDB()
 
 	b.ResetTimer()
 	b.ReportAllocs()

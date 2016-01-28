@@ -3,7 +3,6 @@ package serial
 import (
 	"encoding/binary"
 	"errors"
-	"time"
 )
 
 var (
@@ -12,37 +11,30 @@ var (
 
 // TimedPointer is a pointer that referes to a spesific point in time
 type TimedPointer struct {
-	TimeStamp time.Time
+	TimeStamp uint64
 	Pointer
 }
 
 // NewTimedPointer creats and returns a new TimedPointer
-func NewTimedPointer(head, size uint64, t time.Time) *TimedPointer {
+func NewTimedPointer(head, size, t uint64) *TimedPointer {
 	return &TimedPointer{
 		t, Pointer{head, size},
 	}
 }
 
 // MarshalDB encodes a TimedPointer as binary
-func (t *TimedPointer) MarshalDB() ([]byte, error) {
+func (t *TimedPointer) MarshalDB() []byte {
 
 	// make a buffer big enough
 	buff := make([]byte, t.BinSize())
 
-	// marshal the timestamp
-	timeBuff, err := t.TimeStamp.MarshalBinary()
-	if err != nil {
-		return buff, err
-	}
-
 	// copy the time buffer in
-	copy(buff[:15], timeBuff)
+	binary.LittleEndian.PutUint64(buff[:8], t.TimeStamp)
 
 	// copy the pointer buffer into the buffer
-	ptrBuff, _ := t.Pointer.MarshalDB()
-	copy(buff[15:], ptrBuff)
+	copy(buff[8:], t.Pointer.MarshalDB())
 
-	return buff, nil
+	return buff
 }
 
 // UnmarshalDB decodes a binary blob into a timed pointer
@@ -52,18 +44,15 @@ func (t *TimedPointer) UnmarshalDB(buff []byte) error {
 	}
 
 	// first 15 are the timestamp
-	err := t.TimeStamp.UnmarshalBinary(buff[:15])
-	if err != nil {
-		return err
-	}
+	t.TimeStamp = binary.LittleEndian.Uint64(buff[:8])
 
 	// the rest is from the pointer
-	return t.Pointer.UnmarshalDB(buff[15:])
+	return t.Pointer.UnmarshalDB(buff[8:])
 }
 
 // BinSize returns the size of a TimedPointer once it is encoded as binary
 func (t *TimedPointer) BinSize() uint64 {
-	return t.Pointer.BinSize() + 15 // size of the pointer + the 15 bytes for the time
+	return t.Pointer.BinSize() + 8 // size of the pointer + the 8 bytes for the time
 }
 
 // Pointer spesifies the location and size of a piece of data on disk
@@ -83,12 +72,12 @@ func (p *Pointer) BinSize() uint64 {
 }
 
 // MarshalDB encodes a pointer as binary
-func (p *Pointer) MarshalDB() ([]byte, error) {
+func (p *Pointer) MarshalDB() []byte {
 	buff := make([]byte, 16)
 
 	binary.LittleEndian.PutUint64(buff[:8], p.head)
 	binary.LittleEndian.PutUint64(buff[8:16], p.size)
-	return buff, nil
+	return buff
 }
 
 // UnmarshalDB decodes binary into a pointer
