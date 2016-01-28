@@ -11,7 +11,7 @@ var (
 
 // TimedPointer is a pointer that referes to a spesific point in time
 type TimedPointer struct {
-	TimeStamp uint64
+	InsertTime uint64
 	Pointer
 }
 
@@ -29,7 +29,7 @@ func (t *TimedPointer) MarshalDB() []byte {
 	buff := make([]byte, t.BinSize())
 
 	// copy the time buffer in
-	binary.LittleEndian.PutUint64(buff[:8], t.TimeStamp)
+	binary.LittleEndian.PutUint64(buff[:8], t.InsertTime)
 
 	// copy the pointer buffer into the buffer
 	copy(buff[8:], t.Pointer.MarshalDB())
@@ -44,7 +44,7 @@ func (t *TimedPointer) UnmarshalDB(buff []byte) error {
 	}
 
 	// first 15 are the timestamp
-	t.TimeStamp = binary.LittleEndian.Uint64(buff[:8])
+	t.InsertTime = binary.LittleEndian.Uint64(buff[:8])
 
 	// the rest is from the pointer
 	return t.Pointer.UnmarshalDB(buff[8:])
