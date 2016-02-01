@@ -8,11 +8,11 @@ import (
 
 func TestMarshalUnmarshalPointer(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		p := NewPointer(randutil.Uint64(), randutil.Uint64())
+		p := NewPointer(randutil.Uint64(), randutil.Uint64(), 0)
 
-		buff := p.MarshalDB()
+		buff := p.MarshalDB(nil)
 
-		n := NewPointer(0, 0)
+		n := NewPointer(0, 0, 0)
 		err := n.UnmarshalDB(buff)
 		if err != nil {
 			t.Error(err)
@@ -24,45 +24,42 @@ func TestMarshalUnmarshalPointer(t *testing.T) {
 	}
 }
 
-func TestMarshalUnmarshalTimedPointer(t *testing.T) {
+func TestPointerFlag(t *testing.T) {
+	p := NewPointer(0, 0, FlagValid)
 
-	for i := 0; i < 1000; i++ {
-		p := NewTimedPointer(randutil.Uint64(), randutil.Uint64(), randutil.Uint64())
+	if !p.HasFlag(FlagValid) {
+		t.Fail()
+	}
 
-		buff := p.MarshalDB()
-
-		np := NewTimedPointer(0, 0, 0)
-
-		err := np.UnmarshalDB(buff)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if *p != *np {
-			t.Fatal(*p, *np)
-		}
+	if p.HasFlag(FlagMarkedForDeletion) {
+		t.Fail()
 	}
 }
 
-func BenchmarkMarshalTimedPointer(b *testing.B) {
-	p := NewTimedPointer(0, 0, randutil.Uint64())
+func TestAddFlag(t *testing.T) {
+	p := NewPointer(0, 0, FlagValid)
 
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for i := 0; i < b.N; i++ {
-		p.MarshalDB()
+	if p.HasFlag(FlagMarkedForDeletion) {
+		t.Fatal()
 	}
+
+	p.AddFlag(FlagMarkedForDeletion)
+	if !p.HasFlag(FlagMarkedForDeletion) {
+		t.Fatal()
+	}
+
 }
 
-func BenchmarkUnmarshalTimedPointer(b *testing.B) {
-	p := NewTimedPointer(0, 0, randutil.Uint64())
-	buff := p.MarshalDB()
+func TestRemoveFlag(t *testing.T) {
+	p := NewPointer(0, 0, FlagValid)
 
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for i := 0; i < b.N; i++ {
-		p.UnmarshalDB(buff)
+	if !p.HasFlag(FlagValid) {
+		t.Fail()
 	}
+	p.RemoveFlag(FlagValid)
+
+	if p.HasFlag(FlagValid) {
+		t.Fail()
+	}
+
 }

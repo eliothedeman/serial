@@ -78,59 +78,55 @@ func runWithDb(f func(db *DB)) {
 
 }
 
-func TestPutStrWithCache(t *testing.T) {
+func TestReadWriteBlock(t *testing.T) {
 	runWithDb(func(db *DB) {
-		ptr, err := db.PutKeyVal([]byte("hello"), []byte("world"))
-		if err != nil {
-			t.Error(err)
-		}
+		blks := randBlocks(1000)
 
-		buff, err := db.getStr(&ptr.KeyPointer)
-		if err != nil {
-			t.Error(err)
-		}
+		for _, b := range blks {
+			p, err := db.WriteBlock(b)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if string(buff) != "hello" {
-			t.Fail()
+			nb, err := db.ReadBlock(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !nb.Equals(b) {
+				t.Fail()
+			}
 		}
 	})
 }
 
-func TestPutStrWithoutCache(t *testing.T) {
+func BenchmarkWriteBlock(b *testing.B) {
 	runWithDb(func(db *DB) {
-		ptr, err := db.PutKeyVal([]byte("hello"), []byte("world"))
-		if err != nil {
-			t.Error(err)
-		}
+		blks := randBlocks(1000)
 
-		// kill the cache
-		db.idToStr = make(map[uint64][]byte)
-
-		buff, err := db.getStr(&ptr.KeyPointer)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if string(buff) != "hello" {
-			t.Fail()
-		}
-	})
-}
-
-func BenchmarkPutStr(b *testing.B) {
-
-	strs := make([][]byte, b.N)
-	for i := 0; i < len(strs); i++ {
-		strs[i] = []byte(randutil.AlphaString(randutil.IntRange(10, 10)))
-	}
-
-	runWithDb(func(db *DB) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			db.putStr(strs[i%len(strs)])
+			db.WriteBlock(blks[i%len(blks)])
+		}
+	})
+}
 
+func BenchmarkReadBlockSequential(b *testing.B) {
+	runWithDb(func(db *DB) {
+		blks := randBlocks(1000)
+		pointers := make([]*Pointer, b.N)
+
+		// write down enough blocks for us to read in series
+		for i := 0; i < b.N; i++ {
+			p, _ := db.WriteBlock(blks[i%len(blks)])
+			pointers[i] = p
 		}
 
+		b.ResetTimer()
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			db.ReadBlock(pointers[i])
+		}
 	})
 }

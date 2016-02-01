@@ -2,9 +2,7 @@ package serial
 
 import (
 	"io"
-	"sync/atomic"
-
-	"github.com/tchap/go-patricia/patricia"
+	"time"
 )
 
 type Storage interface {
@@ -17,6 +15,19 @@ type Storage interface {
 // Returns the size of a value once it is encoded as binary
 type BinSizer interface {
 	BinSize() uint64
+}
+
+type DBMarshaler interface {
+	MarshalDB(buff []byte) []byte
+}
+
+type DBUnmarshaler interface {
+	UnmarshalDB(buff []byte) error
+}
+
+type DBMarshalUnmarshaler interface {
+	DBMarshaler
+	DBUnmarshaler
 }
 
 func readFull(r io.Reader, buff []byte) error {
@@ -79,26 +90,20 @@ func WriteData(s io.WriteSeeker, b []byte) (*Pointer, error) {
 	}
 
 	// create a new pointer that points to the data that has just been written
-	p := NewPointer(uint64(offset), uint64(len(b)))
+	p := NewPointer(uint64(offset), uint64(len(b)), FlagValid)
 	return p, nil
 }
 
 // Db is a view into a database
 type DB struct {
-	pointerStor, strStor, metaStor Storage
-	strTrie                        *patricia.Trie
-	idToStr                        map[uint64][]byte
-	strCount                       uint64
+	pointerStor, blockStor Storage
 }
 
 // NewDB creates and returns a new DB
-func NewDB(pointerStor, strStor, metaStor Storage) *DB {
+func NewDB(pointerStor, strStor, blockStor Storage) *DB {
 	db := &DB{
 		pointerStor: pointerStor,
-		strStor:     strStor,
-		metaStor:    metaStor,
-		strTrie:     patricia.NewTrie(),
-		idToStr:     make(map[uint64][]byte),
+		blockStor:   blockStor,
 	}
 
 	return db
@@ -112,12 +117,7 @@ func (d *DB) Close() error {
 		vErr = err
 	}
 
-	err = d.strStor.Close()
-	if err != nil {
-		vErr = err
-	}
-
-	err = d.metaStor.Close()
+	err = d.blockStor.Close()
 	if err != nil {
 		vErr = err
 	}
@@ -125,94 +125,37 @@ func (d *DB) Close() error {
 	return vErr
 }
 
-// putStr inserts a string into the string store and returns a pointer to it's location
-func (d *DB) putStr(str []byte) (*StrPointer, error) {
+// writeBlock appends a block to the blockStor
+func (d *DB) writeBlock(b *Block) (*Pointer, error) {
+	return WriteData(d.blockStor, b.MarshalDB(nil))
+}
 
-	// check to see if this string has already been inserted into the database
-	if v := d.strTrie.Get(patricia.Prefix(str)); v != nil {
-		return v.(*StrPointer), nil
+// writePointer appends a pointer
+func (d *DB) writePointer(p *Pointer) error {
+	return writeFull(d.pointerStor, p.MarshalDB(nil))
+}
+
+// WriteBlock appends a block to the blockstor and writes its pointer to the pointerstor
+func (d *DB) WriteBlock(b *Block) (*Pointer, error) {
+
+	// set the current time for the "insert time"
+	b.InsertTime = uint64(time.Now().Unix())
+	p, err := d.writeBlock(b)
+	if err != nil {
+		return p, err
 	}
 
-	// create an id for the string
-	id := atomic.AddUint64(&d.strCount, 1)
+	return p, d.writePointer(p)
+}
 
-	// put the str into the database
-	ptr, err := WriteData(d.strStor, str)
+// ReadBlock reads the block that is located at the given pointer
+func (d *DB) ReadBlock(p *Pointer) (*Block, error) {
+	buff, err := ReadData(d.blockStor, p)
 	if err != nil {
 		return nil, err
 	}
 
-	strPtr := &StrPointer{}
-	strPtr.Pointer = *ptr
-	strPtr.StrId = id
-
-	// insert this into the trie cache
-	d.strTrie.Insert(patricia.Prefix(str), strPtr)
-
-	return strPtr, nil
-
-}
-
-// getStr given a pointer return the string that it points to
-func (d *DB) getStr(ptr *StrPointer) ([]byte, error) {
-
-	// check the cache for this string
-	buff, ok := d.idToStr[ptr.StrId]
-	if ok {
-		return buff, nil
-	}
-
-	// read the buffer from storage
-	buff, err := ReadData(d.strStor, &ptr.Pointer)
-	if err != nil {
-		return nil, err
-	}
-
-	// insert the buffer into the cache
-	d.idToStr[ptr.StrId] = buff
-	d.strTrie.Insert(patricia.Prefix(buff), ptr)
-
-	return buff, nil
-}
-
-// strFromId given a id look up the string that this id points to. Nil if not found
-func (d *DB) strFromId(id uint64) []byte {
-	b, ok := d.idToStr[id]
-	if !ok {
-		return nil
-	}
-
-	return b
-}
-
-// PutKeyVal inserts a new key and value into the database and returns a new KeyVal pointer
-func (d *DB) PutKeyVal(key, val []byte) (*KeyVal, error) {
-	kv := KeyVal{}
-
-	kv.Key = key
-	kv.Value = val
-
-	// write the key and value to the str db
-	ptr, err := d.putStr(key)
-	if err != nil {
-		return nil, err
-	}
-
-	kv.KeyPointer = *ptr
-
-	// write the val
-	ptr, err = d.putStr(val)
-	if err != nil {
-		return nil, err
-	}
-
-	kv.ValuePointer = *ptr
-
-	return &kv, nil
-}
-
-// InsertPoint appends the given point to the database
-func (d *DB) InsertPoint(p *Point) (*TimedPointer, error) {
-	return nil, nil
-
+	b := &Block{}
+	err = b.UnmarshalDB(buff)
+	return b, err
 }
