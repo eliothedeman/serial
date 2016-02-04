@@ -61,6 +61,11 @@ func writeFull(w io.Writer, buff []byte) error {
 	return nil
 }
 
+// now returns the current unix timestamp as a uint64
+func now() uint64 {
+	return uint64(time.Now().Unix())
+}
+
 // ReadData read the data from storage that the pointer points to
 func ReadData(s io.ReadSeeker, p *Pointer) ([]byte, error) {
 	// seek to the head of the pointer
@@ -90,7 +95,7 @@ func WriteData(s io.WriteSeeker, b []byte) (*Pointer, error) {
 	}
 
 	// create a new pointer that points to the data that has just been written
-	p := NewPointer(uint64(offset), uint64(len(b)), FlagValid)
+	p := NewPointer(uint64(offset), uint64(len(b)), FlagValid, now())
 	return p, nil
 }
 

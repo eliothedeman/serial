@@ -8,11 +8,11 @@ import (
 
 func TestMarshalUnmarshalPointer(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		p := NewPointer(randutil.Uint64(), randutil.Uint64(), 0)
+		p := NewPointer(randutil.Uint64(), randutil.Uint64(), 0, now())
 
 		buff := p.MarshalDB(nil)
 
-		n := NewPointer(0, 0, 0)
+		n := NewPointer(0, 0, 0, now())
 		err := n.UnmarshalDB(buff)
 		if err != nil {
 			t.Error(err)
@@ -25,7 +25,7 @@ func TestMarshalUnmarshalPointer(t *testing.T) {
 }
 
 func TestPointerFlag(t *testing.T) {
-	p := NewPointer(0, 0, FlagValid)
+	p := NewPointer(0, 0, FlagValid, now())
 
 	if !p.HasFlag(FlagValid) {
 		t.Fail()
@@ -37,7 +37,7 @@ func TestPointerFlag(t *testing.T) {
 }
 
 func TestAddFlag(t *testing.T) {
-	p := NewPointer(0, 0, FlagValid)
+	p := NewPointer(0, 0, FlagValid, now())
 
 	if p.HasFlag(FlagMarkedForDeletion) {
 		t.Fatal()
@@ -51,7 +51,7 @@ func TestAddFlag(t *testing.T) {
 }
 
 func TestRemoveFlag(t *testing.T) {
-	p := NewPointer(0, 0, FlagValid)
+	p := NewPointer(0, 0, FlagValid, now())
 
 	if !p.HasFlag(FlagValid) {
 		t.Fail()
