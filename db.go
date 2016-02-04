@@ -253,9 +253,12 @@ func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
 	errChan := make(chan error)
 
 	go func() {
+
 		// start streaming the pointers
 		pc, ec := d.streamPointersBetween(start, end)
 		for p := range pc {
+			//TODO : close the error channels @memory_leak
+
 			// load the block at this pointer
 			b, err := d.ReadBlock(p)
 			if err != nil {
