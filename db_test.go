@@ -3,6 +3,7 @@ package serial
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -124,6 +125,106 @@ func BenchmarkReadBlockSequential(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			db.ReadBlock(pointers[i])
+		}
+	})
+}
+
+func TestStreamPointersBetween(t *testing.T) {
+	runWithDb(func(db *DB) {
+		blks := randBlocks(1000)
+
+		// write a bunch of blocks
+		for _, b := range blks {
+			p, err := db.WriteBlock(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			nb, err := db.ReadBlock(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !nb.Equals(b) {
+				t.Fail()
+			}
+		}
+
+		// read all dem pointers
+		pc, ec := db.streamPointersBetween(0, math.MaxUint64)
+		i := 0
+		for range pc {
+			i++
+		}
+		if i != 1000 {
+			t.Fatal(i)
+		}
+
+		err := <-ec
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func BenchmarkStreamPointerBetween(b *testing.B) {
+	runWithDb(func(db *DB) {
+		blks := randBlocks(b.N)
+
+		// write a bunch of blocks
+		for _, blk := range blks {
+			db.WriteBlock(blk)
+		}
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		// read all dem pointers
+		pc, ec := db.streamPointersBetween(0, math.MaxUint64)
+		for range pc {
+		}
+
+		err := <-ec
+		if err != nil {
+			b.Fatal(err)
+		}
+	})
+}
+
+func TestStreamBlocksBetween(t *testing.T) {
+	runWithDb(func(db *DB) {
+		blks := randBlocks(1000)
+
+		// write a bunch of blocks
+		for _, b := range blks {
+			p, err := db.WriteBlock(b)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			nb, err := db.ReadBlock(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !nb.Equals(b) {
+				t.Fail()
+			}
+		}
+
+		// read all dem blocks
+		bc, ec := db.StreamBlocksBetween(0, math.MaxUint64)
+		i := 0
+		for range bc {
+			i++
+		}
+		if i != 1000 {
+			t.Fatal(i)
+		}
+
+		err := <-ec
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 }

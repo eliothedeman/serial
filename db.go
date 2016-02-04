@@ -164,3 +164,113 @@ func (d *DB) ReadBlock(p *Pointer) (*Block, error) {
 	err = b.UnmarshalDB(buff)
 	return b, err
 }
+
+// ReadPointer reads a pointer with the given index
+func (d *DB) ReadPointer(index uint64) (*Pointer, error) {
+	p := &Pointer{}
+
+	// construct a pointer that will be used to read the pointer in question
+	pp := Pointer{}
+	pp.size = p.BinSize()
+	pp.head = p.BinSize() * index
+
+	// read out the buffer at the pointer location
+	buff, err := ReadData(d.pointerStore, &pp)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.UnmarshalDB(buff)
+
+	return p, err
+}
+
+// streamPointersBetween streams all pointers that lie between two points
+func (d *DB) streamPointersBetween(start, end uint64) (chan *Pointer, chan error) {
+	pc := make(chan *Pointer)
+	ec := make(chan error)
+
+	// handle errors by closing out channels and sending the error on
+	handleError := func(err error) {
+		close(pc)
+		ec <- err
+		close(ec)
+	}
+	handleNoError := func() {
+		close(pc)
+		ec <- nil
+		close(ec)
+	}
+	go func() {
+		p := &Pointer{}
+		var err error
+		var i uint64
+		// start loading pointers until we see something that is > than start
+		for p.insertTime < start {
+			p, err = d.ReadPointer(i)
+
+			if err != nil {
+				if err == io.EOF {
+					handleNoError()
+					return
+				}
+				handleError(err)
+				return
+			}
+			i++
+		}
+
+		// now that we are at the correct index, read all until we are at the end
+		for p.insertTime < end {
+
+			// send on the pointer
+			if p.insertTime != 0 {
+				pc <- p
+			}
+
+			// read the next pointer
+			p, err = d.ReadPointer(i)
+
+			if err != nil {
+				if err == io.EOF {
+					handleNoError()
+					return
+				}
+				handleError(err)
+				return
+			}
+			i++
+		}
+		handleNoError()
+	}()
+
+	return pc, ec
+}
+
+// StreamBlocksBetween starts streaming all blocks between the given timestamps
+func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
+	bc := make(chan *Block)
+	errChan := make(chan error)
+
+	go func() {
+		// start streaming the pointers
+		pc, ec := d.streamPointersBetween(start, end)
+		for p := range pc {
+			// load the block at this pointer
+			b, err := d.ReadBlock(p)
+			if err != nil {
+				close(bc)
+				errChan <- err
+				close(errChan)
+				return
+			}
+
+			bc <- b
+		}
+		close(bc)
+		errChan <- <-ec
+		close(bc)
+	}()
+
+	return bc, errChan
+}
