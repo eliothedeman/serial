@@ -269,7 +269,7 @@ func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
 		}
 		close(bc)
 		errChan <- <-ec
-		close(bc)
+		close(errChan)
 	}()
 
 	return bc, errChan

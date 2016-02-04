@@ -169,7 +169,7 @@ func TestStreamPointersBetween(t *testing.T) {
 
 func BenchmarkStreamPointerBetween(b *testing.B) {
 	runWithDb(func(db *DB) {
-		blks := randBlocks(b.N)
+		blks := randBlocks(1000)
 
 		// write a bunch of blocks
 		for _, blk := range blks {
@@ -180,14 +180,16 @@ func BenchmarkStreamPointerBetween(b *testing.B) {
 		b.ReportAllocs()
 
 		// read all dem pointers
-		pc, ec := db.streamPointersBetween(0, math.MaxUint64)
-		for range pc {
+		for i := 0; i < b.N/len(blks); i++ {
+			pc, ec := db.streamPointersBetween(0, math.MaxUint64)
+			for range pc {
+			}
+			err := <-ec
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
 
-		err := <-ec
-		if err != nil {
-			b.Fatal(err)
-		}
 	})
 }
 
@@ -226,5 +228,31 @@ func TestStreamBlocksBetween(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	})
+}
+
+func BenchmarkStreamBlockBetween(b *testing.B) {
+	runWithDb(func(db *DB) {
+		blks := randBlocks(1000)
+
+		// write a bunch of blocks
+		for _, blk := range blks {
+			db.WriteBlock(blk)
+		}
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		// read all dem pointers
+		for i := 0; i < b.N/len(blks); i++ {
+			bc, ec := db.StreamBlocksBetween(0, math.MaxUint64)
+			for range bc {
+			}
+			err := <-ec
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+
 	})
 }
