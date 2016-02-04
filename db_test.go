@@ -56,20 +56,17 @@ func TestReadFull(t *testing.T) {
 func runWithDb(f func(db *DB)) {
 
 	id := atomic.AddUint64(&testCount, 1)
-	s, _ := os.Create(fmt.Sprintf("str.db.%d", id))
 	p, _ := os.Create(fmt.Sprintf("ptr.db.%d", id))
 	m, _ := os.Create(fmt.Sprintf("meta.db.%d", id))
 
-	d := NewDB(p, s, m)
+	d := NewDB(p, m)
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered in f", r)
 		}
 		// clean up
-		s.Close()
 		p.Close()
 		m.Close()
-		os.Remove(s.Name())
 		os.Remove(p.Name())
 		os.Remove(m.Name())
 	}()

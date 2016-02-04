@@ -101,14 +101,14 @@ func WriteData(s io.WriteSeeker, b []byte) (*Pointer, error) {
 
 // Db is a view into a database
 type DB struct {
-	pointerStor, blockStor Storage
+	pointerStore, blockStore Storage
 }
 
 // NewDB creates and returns a new DB
-func NewDB(pointerStor, strStor, blockStor Storage) *DB {
+func NewDB(pointerStore, blockStore Storage) *DB {
 	db := &DB{
-		pointerStor: pointerStor,
-		blockStor:   blockStor,
+		pointerStore: pointerStore,
+		blockStore:   blockStore,
 	}
 
 	return db
@@ -117,12 +117,12 @@ func NewDB(pointerStor, strStor, blockStor Storage) *DB {
 // Close closes all open databases
 func (d *DB) Close() error {
 	var vErr error
-	err := d.pointerStor.Close()
+	err := d.pointerStore.Close()
 	if err != nil {
 		vErr = err
 	}
 
-	err = d.blockStor.Close()
+	err = d.blockStore.Close()
 	if err != nil {
 		vErr = err
 	}
@@ -130,14 +130,14 @@ func (d *DB) Close() error {
 	return vErr
 }
 
-// writeBlock appends a block to the blockStor
+// writeBlock appends a block to the blockStore
 func (d *DB) writeBlock(b *Block) (*Pointer, error) {
-	return WriteData(d.blockStor, b.MarshalDB(nil))
+	return WriteData(d.blockStore, b.MarshalDB(nil))
 }
 
 // writePointer appends a pointer
 func (d *DB) writePointer(p *Pointer) error {
-	return writeFull(d.pointerStor, p.MarshalDB(nil))
+	return writeFull(d.pointerStore, p.MarshalDB(nil))
 }
 
 // WriteBlock appends a block to the blockstor and writes its pointer to the pointerstor
@@ -155,7 +155,7 @@ func (d *DB) WriteBlock(b *Block) (*Pointer, error) {
 
 // ReadBlock reads the block that is located at the given pointer
 func (d *DB) ReadBlock(p *Pointer) (*Block, error) {
-	buff, err := ReadData(d.blockStor, p)
+	buff, err := ReadData(d.blockStore, p)
 	if err != nil {
 		return nil, err
 	}
