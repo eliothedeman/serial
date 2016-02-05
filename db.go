@@ -2,6 +2,7 @@ package serial
 
 import (
 	"io"
+	"log"
 	"time"
 )
 
@@ -257,7 +258,6 @@ func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
 		// start streaming the pointers
 		pc, ec := d.streamPointersBetween(start, end)
 		for p := range pc {
-			//TODO : close the error channels @memory_leak
 
 			// load the block at this pointer
 			b, err := d.ReadBlock(p)
@@ -265,6 +265,23 @@ func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
 				close(bc)
 				errChan <- err
 				close(errChan)
+
+				// drain out the remaining pointers and error
+				go func() {
+
+					// drain the pointers
+					for range pc {
+
+					}
+
+					// read the error if it exists
+					err := <-ec
+					if err != nil {
+
+						// TODO : use logrus instead of built in log package
+						log.Println(err)
+					}
+				}()
 				return
 			}
 
