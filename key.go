@@ -37,8 +37,8 @@ func (k *KeyVal) Equals(kv *KeyVal) bool {
 	return bytes.Equal(k.Value, kv.Value)
 }
 
-// MarshalDB encodes a KeyVal pair in the form it will be stored in the database
-func (k *KeyVal) MarshalDB(buff []byte) []byte {
+// MarshalTable encodes a KeyVal pair in the form it will be stored in the database
+func (k *KeyVal) MarshalTable(buff []byte) []byte {
 	if buff == nil || len(buff) < int(k.BinSize()) {
 		buff = make([]byte, k.BinSize())
 	}
@@ -66,8 +66,8 @@ func (k *KeyVal) MarshalDB(buff []byte) []byte {
 	return buff[0:k.BinSize()]
 }
 
-// UnmarshalDB decodes a KeyVal pair from its stabase format
-func (k *KeyVal) UnmarshalDB(buff []byte) error {
+// UnmarshalTable decodes a KeyVal pair from its stabase format
+func (k *KeyVal) UnmarshalTable(buff []byte) error {
 
 	// read the size header
 	size := binary.LittleEndian.Uint64(buff[0:8])

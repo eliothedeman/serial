@@ -10,10 +10,10 @@ func TestMarshalUnmarshalPointer(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		p := NewPointer(randutil.Uint64(), randutil.Uint64(), 0, now())
 
-		buff := p.MarshalDB(nil)
+		buff := p.MarshalTable(nil)
 
 		n := NewPointer(0, 0, 0, now())
-		err := n.UnmarshalDB(buff)
+		err := n.UnmarshalTable(buff)
 		if err != nil {
 			t.Error(err)
 		}

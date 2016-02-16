@@ -5,13 +5,13 @@ import "bytes"
 // Transaction provides methods for rolling back writes
 type Transaction struct {
 	ptrStore, blockStore *bytes.Buffer // in memory forward buffers
-	db                   *DB
+	Table                *Table
 }
 
 // NewTransaction create and return a new transaction
-func NewTransaction(db *DB) *Transaction {
+func NewTransaction(Table *Table) *Transaction {
 	return &Transaction{
-		db:         db,
+		Table:      Table,
 		ptrStore:   bytes.NewBuffer(nil),
 		blockStore: bytes.NewBuffer(nil),
 	}

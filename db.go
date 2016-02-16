@@ -18,17 +18,17 @@ type BinSizer interface {
 	BinSize() uint64
 }
 
-type DBMarshaler interface {
-	MarshalDB(buff []byte) []byte
+type TableMarshaler interface {
+	MarshalTable(buff []byte) []byte
 }
 
-type DBUnmarshaler interface {
-	UnmarshalDB(buff []byte) error
+type TableUnmarshaler interface {
+	UnmarshalTable(buff []byte) error
 }
 
-type DBMarshalUnmarshaler interface {
-	DBMarshaler
-	DBUnmarshaler
+type TableMarshalUnmarshaler interface {
+	TableMarshaler
+	TableUnmarshaler
 }
 
 func readFull(r io.Reader, buff []byte) error {
@@ -100,23 +100,23 @@ func WriteData(s io.WriteSeeker, b []byte) (*Pointer, error) {
 	return p, nil
 }
 
-// Db is a view into a database
-type DB struct {
+// Table is a view into a database
+type Table struct {
 	pointerStore, blockStore Storage
 }
 
-// NewDB creates and returns a new DB
-func NewDB(pointerStore, blockStore Storage) *DB {
-	db := &DB{
+// NewTable creates and returns a new Table
+func NewTable(pointerStore, blockStore Storage) *Table {
+	Table := &Table{
 		pointerStore: pointerStore,
 		blockStore:   blockStore,
 	}
 
-	return db
+	return Table
 }
 
 // Close closes all open databases
-func (d *DB) Close() error {
+func (d *Table) Close() error {
 	var vErr error
 	err := d.pointerStore.Close()
 	if err != nil {
@@ -132,17 +132,17 @@ func (d *DB) Close() error {
 }
 
 // writeBlock appends a block to the blockStore
-func (d *DB) writeBlock(b *Block) (*Pointer, error) {
-	return WriteData(d.blockStore, b.MarshalDB(nil))
+func (d *Table) writeBlock(b *Block) (*Pointer, error) {
+	return WriteData(d.blockStore, b.MarshalTable(nil))
 }
 
 // writePointer appends a pointer
-func (d *DB) writePointer(p *Pointer) error {
-	return writeFull(d.pointerStore, p.MarshalDB(nil))
+func (d *Table) writePointer(p *Pointer) error {
+	return writeFull(d.pointerStore, p.MarshalTable(nil))
 }
 
 // WriteBlock appends a block to the blockstor and writes its pointer to the pointerstor
-func (d *DB) WriteBlock(b *Block) (*Pointer, error) {
+func (d *Table) WriteBlock(b *Block) (*Pointer, error) {
 
 	// set the current time for the "insert time"
 	b.InsertTime = uint64(time.Now().Unix())
@@ -154,20 +154,20 @@ func (d *DB) WriteBlock(b *Block) (*Pointer, error) {
 	return p, d.writePointer(p)
 }
 
-// ReadBlock reads the block that is located at the given pointer
-func (d *DB) ReadBlock(p *Pointer) (*Block, error) {
+// ReaTablelock reads the block that is located at the given pointer
+func (d *Table) ReaTablelock(p *Pointer) (*Block, error) {
 	buff, err := ReadData(d.blockStore, p)
 	if err != nil {
 		return nil, err
 	}
 
 	b := &Block{}
-	err = b.UnmarshalDB(buff)
+	err = b.UnmarshalTable(buff)
 	return b, err
 }
 
 // ReadPointer reads a pointer with the given index
-func (d *DB) ReadPointer(index uint64) (*Pointer, error) {
+func (d *Table) ReadPointer(index uint64) (*Pointer, error) {
 	p := &Pointer{}
 
 	// construct a pointer that will be used to read the pointer in question
@@ -181,13 +181,13 @@ func (d *DB) ReadPointer(index uint64) (*Pointer, error) {
 		return nil, err
 	}
 
-	err = p.UnmarshalDB(buff)
+	err = p.UnmarshalTable(buff)
 
 	return p, err
 }
 
 // streamPointersBetween streams all pointers that lie between two points
-func (d *DB) streamPointersBetween(start, end uint64) (chan *Pointer, chan error) {
+func (d *Table) streamPointersBetween(start, end uint64) (chan *Pointer, chan error) {
 	pc := make(chan *Pointer)
 	ec := make(chan error)
 
@@ -249,7 +249,7 @@ func (d *DB) streamPointersBetween(start, end uint64) (chan *Pointer, chan error
 }
 
 // StreamBlocksBetween starts streaming all blocks between the given timestamps
-func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
+func (d *Table) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
 	bc := make(chan *Block)
 	errChan := make(chan error)
 
@@ -260,7 +260,7 @@ func (d *DB) StreamBlocksBetween(start, end uint64) (chan *Block, chan error) {
 		for p := range pc {
 
 			// load the block at this pointer
-			b, err := d.ReadBlock(p)
+			b, err := d.ReaTablelock(p)
 			if err != nil {
 				close(bc)
 				errChan <- err

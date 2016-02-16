@@ -46,8 +46,8 @@ func (b *Block) BinSize() uint64 {
 	return size
 }
 
-// MarshalDB encodes a Block in the form it will be stored in the database
-func (b *Block) MarshalDB(buff []byte) []byte {
+// MarshalTable encodes a Block in the form it will be stored in the database
+func (b *Block) MarshalTable(buff []byte) []byte {
 	if buff == nil || len(buff) < int(b.BinSize()) {
 		buff = make([]byte, b.BinSize())
 	}
@@ -69,15 +69,15 @@ func (b *Block) MarshalDB(buff []byte) []byte {
 	for _, kv := range b.Data {
 
 		// this will do it in place with out any new allocations
-		kv.MarshalDB(buff[offset : offset+kv.BinSize()])
+		kv.MarshalTable(buff[offset : offset+kv.BinSize()])
 		offset += kv.BinSize()
 	}
 
 	return buff
 }
 
-// UnmarshalDB decodes a Block from the form it was stored in the database
-func (b *Block) UnmarshalDB(buff []byte) error {
+// UnmarshalTable decodes a Block from the form it was stored in the database
+func (b *Block) UnmarshalTable(buff []byte) error {
 	size := binary.LittleEndian.Uint64(buff[0:8])
 	if uint64(len(buff)) != size {
 		return IncorrectBufferSize
@@ -101,7 +101,7 @@ func (b *Block) UnmarshalDB(buff []byte) error {
 		// read the next size
 		// the first 8 bytes of a KeyVal are it's binary size, so read that first and include it in the buffer passed for unmarshaling
 		size = binary.LittleEndian.Uint64(buff[offset : offset+8])
-		err := kv.UnmarshalDB(buff[offset : offset+size])
+		err := kv.UnmarshalTable(buff[offset : offset+size])
 		if err != nil {
 			return err
 		}
