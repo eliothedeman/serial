@@ -66,8 +66,8 @@ func (k *KeyVal) MarshalDB(buff []byte) []byte {
 	return buff[0:k.BinSize()]
 }
 
-// UnMarshalDB decodes a KeyVal pair from its stabase format
-func (k *KeyVal) UnMarshalDB(buff []byte) error {
+// UnmarhsalDB decodes a KeyVal pair from its stabase format
+func (k *KeyVal) UnmarhsalDB(buff []byte) error {
 
 	// read the size header
 	size := binary.LittleEndian.Uint64(buff[0:8])

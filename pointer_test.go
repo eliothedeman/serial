@@ -13,7 +13,7 @@ func TestMarshalUnmarshalPointer(t *testing.T) {
 		buff := p.MarshalDB(nil)
 
 		n := NewPointer(0, 0, 0, now())
-		err := n.UnMarshalDB(buff)
+		err := n.UnmarhsalDB(buff)
 		if err != nil {
 			t.Error(err)
 		}

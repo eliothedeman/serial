@@ -25,7 +25,7 @@ func TestKeyMarshalUnmarshal(t *testing.T) {
 
 	buff := kv.MarshalDB(nil)
 	n := &KeyVal{}
-	err := n.UnMarshalDB(buff)
+	err := n.UnmarhsalDB(buff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -41,7 +41,7 @@ func TestKeyMarshalUnmarshalPreAlloc(t *testing.T) {
 
 	buff = kv.MarshalDB(buff)
 	n := &KeyVal{}
-	err := n.UnMarshalDB(buff)
+	err := n.UnmarhsalDB(buff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -62,7 +62,7 @@ func BenchmarkKeyValMarshalDB(b *testing.B) {
 	}
 }
 
-func BenchmarkKeyValUnMarshalDB(b *testing.B) {
+func BenchmarkKeyValUnmarhsalDB(b *testing.B) {
 
 	// make 1000 kvs
 	kvs := randKVs(1000)
@@ -75,7 +75,7 @@ func BenchmarkKeyValUnMarshalDB(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		kv.UnMarshalDB(buffs[i%len(buffs)])
+		kv.UnmarhsalDB(buffs[i%len(buffs)])
 	}
 }
 
@@ -92,7 +92,7 @@ func BenchmarkKeyValMarshalDBPreAlloc(b *testing.B) {
 	}
 }
 
-func BenchmarkKeyValUnMarshalDBPreAlloc(b *testing.B) {
+func BenchmarkKeyValUnmarhsalDBPreAlloc(b *testing.B) {
 
 	// make 1000 kvs
 	kvs := randKVs(1000)
@@ -106,6 +106,6 @@ func BenchmarkKeyValUnMarshalDBPreAlloc(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		kv.UnMarshalDB(buffs[i%len(buffs)])
+		kv.UnmarhsalDB(buffs[i%len(buffs)])
 	}
 }

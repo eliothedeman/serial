@@ -76,8 +76,8 @@ func (b *Block) MarshalDB(buff []byte) []byte {
 	return buff
 }
 
-// UnMarshalDB decodes a Block from the form it was stored in the database
-func (b *Block) UnMarshalDB(buff []byte) error {
+// UnmarhsalDB decodes a Block from the form it was stored in the database
+func (b *Block) UnmarhsalDB(buff []byte) error {
 	size := binary.LittleEndian.Uint64(buff[0:8])
 	if uint64(len(buff)) != size {
 		return IncorrectBufferSize
@@ -101,7 +101,7 @@ func (b *Block) UnMarshalDB(buff []byte) error {
 		// read the next size
 		// the first 8 bytes of a KeyVal are it's binary size, so read that first and include it in the buffer passed for unmarshaling
 		size = binary.LittleEndian.Uint64(buff[offset : offset+8])
-		err := kv.UnMarshalDB(buff[offset : offset+size])
+		err := kv.UnmarhsalDB(buff[offset : offset+size])
 		if err != nil {
 			return err
 		}

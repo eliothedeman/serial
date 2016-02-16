@@ -24,7 +24,7 @@ func TestBlockMarshalUnmarshal(t *testing.T) {
 	b := ranTablelock()
 	buff := b.MarshalDB(nil)
 	n := &Block{}
-	err := n.UnMarshalDB(buff)
+	err := n.UnmarhsalDB(buff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -38,7 +38,7 @@ func TestBlockMarshalUnmarshalPreAlloc(t *testing.T) {
 	b := ranTablelock()
 	buff := b.MarshalDB(make([]byte, 1000))
 	n := &Block{}
-	err := n.UnMarshalDB(buff)
+	err := n.UnmarhsalDB(buff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -81,7 +81,7 @@ func BenchmarkBlockUnmarshal(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		blocks[i%len(blocks)].UnMarshalDB(buffs[i%len(buffs)])
+		blocks[i%len(blocks)].UnmarhsalDB(buffs[i%len(buffs)])
 	}
 
 }

@@ -162,7 +162,7 @@ func (d *Table) ReaTablelock(p *Pointer) (*Block, error) {
 	}
 
 	b := &Block{}
-	err = b.UnMarshalDB(buff)
+	err = b.UnmarhsalDB(buff)
 	return b, err
 }
 
@@ -181,7 +181,7 @@ func (d *Table) ReadPointer(index uint64) (*Pointer, error) {
 		return nil, err
 	}
 
-	err = p.UnMarshalDB(buff)
+	err = p.UnmarhsalDB(buff)
 
 	return p, err
 }

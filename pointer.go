@@ -62,8 +62,8 @@ func (p *Pointer) MarshalDB(buff []byte) []byte {
 	return buff
 }
 
-// UnMarshalDB decodes binary into a pointer
-func (p *Pointer) UnMarshalDB(buff []byte) error {
+// UnmarhsalDB decodes binary into a pointer
+func (p *Pointer) UnmarhsalDB(buff []byte) error {
 
 	if uint64(len(buff)) != p.BinSize() {
 		return IncorrectBufferSize
