@@ -18,17 +18,17 @@ type BinSizer interface {
 	BinSize() uint64
 }
 
-type TableMarshaler interface {
-	MarshalTable(buff []byte) []byte
+type DBMarshaler interface {
+	MarshalDB(buff []byte) []byte
 }
 
-type TableUnmarshaler interface {
-	UnmarshalTable(buff []byte) error
+type DBUnmarshaler interface {
+	UnmarshalDB(buff []byte) error
 }
 
-type TableMarshalUnmarshaler interface {
-	TableMarshaler
-	TableUnmarshaler
+type DBMarshalUnmarshaler interface {
+	DBMarshaler
+	DBUnmarshaler
 }
 
 func readFull(r io.Reader, buff []byte) error {
@@ -133,12 +133,12 @@ func (d *Table) Close() error {
 
 // writeBlock appends a block to the blockStore
 func (d *Table) writeBlock(b *Block) (*Pointer, error) {
-	return WriteData(d.blockStore, b.MarshalTable(nil))
+	return WriteData(d.blockStore, b.MarshalDB(nil))
 }
 
 // writePointer appends a pointer
 func (d *Table) writePointer(p *Pointer) error {
-	return writeFull(d.pointerStore, p.MarshalTable(nil))
+	return writeFull(d.pointerStore, p.MarshalDB(nil))
 }
 
 // WriteBlock appends a block to the blockstor and writes its pointer to the pointerstor
@@ -162,7 +162,7 @@ func (d *Table) ReaTablelock(p *Pointer) (*Block, error) {
 	}
 
 	b := &Block{}
-	err = b.UnmarshalTable(buff)
+	err = b.UnMarshalDB(buff)
 	return b, err
 }
 
@@ -181,7 +181,7 @@ func (d *Table) ReadPointer(index uint64) (*Pointer, error) {
 		return nil, err
 	}
 
-	err = p.UnmarshalTable(buff)
+	err = p.UnMarshalDB(buff)
 
 	return p, err
 }

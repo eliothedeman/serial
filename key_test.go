@@ -23,9 +23,9 @@ func randKVs(n int) []*KeyVal {
 func TestKeyMarshalUnmarshal(t *testing.T) {
 	kv := randKV()
 
-	buff := kv.MarshalTable(nil)
+	buff := kv.MarshalDB(nil)
 	n := &KeyVal{}
-	err := n.UnmarshalTable(buff)
+	err := n.UnMarshalDB(buff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -39,9 +39,9 @@ func TestKeyMarshalUnmarshalPreAlloc(t *testing.T) {
 	kv := randKV()
 	buff := make([]byte, 1000)
 
-	buff = kv.MarshalTable(buff)
+	buff = kv.MarshalDB(buff)
 	n := &KeyVal{}
-	err := n.UnmarshalTable(buff)
+	err := n.UnMarshalDB(buff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +50,7 @@ func TestKeyMarshalUnmarshalPreAlloc(t *testing.T) {
 		t.Fail()
 	}
 }
-func BenchmarkKeyValMarshalTable(b *testing.B) {
+func BenchmarkKeyValMarshalDB(b *testing.B) {
 
 	// make 1000 kvs
 	kvs := randKVs(1000)
@@ -58,28 +58,28 @@ func BenchmarkKeyValMarshalTable(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		kvs[i%len(kvs)].MarshalTable(nil)
+		kvs[i%len(kvs)].MarshalDB(nil)
 	}
 }
 
-func BenchmarkKeyValUnMarshalTable(b *testing.B) {
+func BenchmarkKeyValUnMarshalDB(b *testing.B) {
 
 	// make 1000 kvs
 	kvs := randKVs(1000)
 	buffs := make([][]byte, len(kvs))
 	for i, kv := range kvs {
-		buffs[i] = kv.MarshalTable(nil)
+		buffs[i] = kv.MarshalDB(nil)
 	}
 
 	kv := &KeyVal{}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		kv.UnmarshalTable(buffs[i%len(buffs)])
+		kv.UnMarshalDB(buffs[i%len(buffs)])
 	}
 }
 
-func BenchmarkKeyValMarshalTablePreAlloc(b *testing.B) {
+func BenchmarkKeyValMarshalDBPreAlloc(b *testing.B) {
 
 	// make 1000 kvs
 	kvs := randKVs(1000)
@@ -88,24 +88,24 @@ func BenchmarkKeyValMarshalTablePreAlloc(b *testing.B) {
 	b.ReportAllocs()
 	buff := make([]byte, 1000)
 	for i := 0; i < b.N; i++ {
-		buff = kvs[i%len(kvs)].MarshalTable(buff)
+		buff = kvs[i%len(kvs)].MarshalDB(buff)
 	}
 }
 
-func BenchmarkKeyValUnMarshalTablePreAlloc(b *testing.B) {
+func BenchmarkKeyValUnMarshalDBPreAlloc(b *testing.B) {
 
 	// make 1000 kvs
 	kvs := randKVs(1000)
 	buffs := make([][]byte, len(kvs))
 	buff := make([]byte, 1000)
 	for i, kv := range kvs {
-		buffs[i] = kv.MarshalTable(buff)
+		buffs[i] = kv.MarshalDB(buff)
 	}
 
 	kv := &KeyVal{}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		kv.UnmarshalTable(buffs[i%len(buffs)])
+		kv.UnMarshalDB(buffs[i%len(buffs)])
 	}
 }

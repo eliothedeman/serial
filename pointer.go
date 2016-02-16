@@ -49,8 +49,8 @@ func (p *Pointer) RemoveFlag(flag uint64) {
 	p.flags = p.flags ^ flag
 }
 
-// MarshalTable encodes a pointer as binary
-func (p *Pointer) MarshalTable(buff []byte) []byte {
+// MarshalDB encodes a pointer as binary
+func (p *Pointer) MarshalDB(buff []byte) []byte {
 	if buff == nil || uint64(len(buff)) < p.BinSize() {
 		buff = make([]byte, p.BinSize())
 	}
@@ -62,8 +62,8 @@ func (p *Pointer) MarshalTable(buff []byte) []byte {
 	return buff
 }
 
-// UnmarshalTable decodes binary into a pointer
-func (p *Pointer) UnmarshalTable(buff []byte) error {
+// UnMarshalDB decodes binary into a pointer
+func (p *Pointer) UnMarshalDB(buff []byte) error {
 
 	if uint64(len(buff)) != p.BinSize() {
 		return IncorrectBufferSize
