@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/eliothedeman/randutil"
 )
 
@@ -16,19 +18,24 @@ var (
 )
 
 func TestWriteFull(t *testing.T) {
-	buff := bytes.NewBuffer(nil)
+	Convey("Given an empty buffer", t, func() {
+		buff := bytes.NewBuffer(nil)
 
-	for i := 0; i < 10000; i++ {
-		msg := randutil.AlphaString(randutil.IntRange(10, 100))
-		err := writeFull(buff, []byte(msg))
-		if err != nil {
-			t.Error(err)
-		}
+		Convey("When a random string is written into the buffer", func() {
+			msg := randutil.AlphaString(randutil.IntRange(10, 100))
+			err := writeFull(buff, []byte(msg))
+			if err != nil {
+				t.Error(err)
+			}
 
-		if msg != string(buff.Next(len(msg))) {
-			t.Fatal()
-		}
-	}
+			Convey("The next value in the buffer should be the same string we just wrote", func() {
+				So(msg, ShouldEqual, string(buff.Next(len(msg))))
+			})
+
+		})
+
+	})
+
 }
 
 func TestReadFull(t *testing.T) {

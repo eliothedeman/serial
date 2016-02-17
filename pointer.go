@@ -3,6 +3,10 @@ package serial
 import (
 	"encoding/binary"
 	"errors"
+	"sync/atomic"
+	"unsafe"
+
+	"github.com/eliothedeman/immut"
 )
 
 var (
@@ -75,4 +79,50 @@ func (p *Pointer) UnmarhsalDB(buff []byte) error {
 	p.insertTime = binary.LittleEndian.Uint64(buff[24:32])
 
 	return nil
+}
+
+// pointerStore is a threadsafe access to the view of pointers at a given time
+type pointerStore struct {
+	storePtr   uintptr
+	dummyStore *immut.UintHashMap // only here for gc reasons
+}
+
+func newPointerStore() *pointerStore {
+	h := immut.NewUintHashMap()
+	s := &pointerStore{}
+	s.setStore(h)
+	return s
+}
+
+func (p *pointerStore) getStore() *immut.UintHashMap {
+
+	// get the current pointer atomically
+	addr := atomic.LoadUintptr(&p.storePtr)
+
+	// return the hash map at the location
+	return (*immut.UintHashMap)(unsafe.Pointer(addr))
+}
+
+func (p *pointerStore) setStore(s *immut.UintHashMap) {
+	addr := uintptr(unsafe.Pointer(s))
+	atomic.StoreUintptr(&p.storePtr, addr)
+
+	// set the dummy store just for gc sake
+	p.dummyStore = s
+}
+
+// put inserts a value into the pointer store at the given key
+func (p *pointerStore) put(k uint64, v *Pointer) {
+	store := p.getStore().Put(k, v)
+
+	p.setStore(store)
+}
+
+func (p *pointerStore) get(k uint64) *Pointer {
+	store := p.getStore()
+	v, ok := store.Get(k)
+	if !ok {
+		return nil
+	}
+	return v.(*Pointer)
 }

@@ -102,14 +102,15 @@ func WriteData(s io.WriteSeeker, b []byte) (*Pointer, error) {
 
 // Table is a view into a database
 type Table struct {
-	pointerStore, blockStore Storage
+	blockStore Storage
+	ptrs       *pointerStore
 }
 
 // NewTable creates and returns a new Table
-func NewTable(pointerStore, blockStore Storage) *Table {
+func NewTable(blockStore Storage) *Table {
 	Table := &Table{
-		pointerStore: pointerStore,
-		blockStore:   blockStore,
+		ptrs:       newPointerStore(),
+		blockStore: blockStore,
 	}
 
 	return Table
@@ -117,28 +118,13 @@ func NewTable(pointerStore, blockStore Storage) *Table {
 
 // Close closes all open databases
 func (d *Table) Close() error {
-	var vErr error
-	err := d.pointerStore.Close()
-	if err != nil {
-		vErr = err
-	}
 
-	err = d.blockStore.Close()
-	if err != nil {
-		vErr = err
-	}
-
-	return vErr
+	return d.blockStore.Close()
 }
 
 // writeBlock appends a block to the blockStore
 func (d *Table) writeBlock(b *Block) (*Pointer, error) {
 	return WriteData(d.blockStore, b.MarshalDB(nil))
-}
-
-// writePointer appends a pointer
-func (d *Table) writePointer(p *Pointer) error {
-	return writeFull(d.pointerStore, p.MarshalDB(nil))
 }
 
 // WriteBlock appends a block to the blockstor and writes its pointer to the pointerstor
